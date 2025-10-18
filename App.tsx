@@ -19,27 +19,20 @@ const App: React.FC = () => {
   const [candidates, setCandidates] = useState<Candidate[]>([]);
   const [guestNames, setGuestNames] = useState<Record<string, string>>({});
   const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [loggedInEvaluator, setLoggedInEvaluator] = useLocalStorage<Evaluator | null>('loggedInEvaluator', null);
 
   useEffect(() => {
-    const handleError = (err: Error) => {
-        console.error("Firebase connection error:", err);
-        setError("حدث خطأ أثناء الاتصال بقاعدة البيانات. يرجى التحقق من اتصالك بالإنترنت والمحاولة مرة أخرى.");
-        setIsLoading(false);
-    };
-
     // Set up real-time listeners
     const unsubscribeCandidates = db.collection('candidates').orderBy('id').onSnapshot(snapshot => {
       const candidatesData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Candidate));
       setCandidates(candidatesData);
-      setIsLoading(false); // Only set loading false on the primary data fetch
-    }, handleError);
+      setIsLoading(false);
+    });
     
     const unsubscribeEvaluations = db.collection('evaluations').onSnapshot(snapshot => {
       const evaluationsData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Evaluation));
       setEvaluations(evaluationsData);
-    }, handleError);
+    });
 
     const unsubscribeGuestNames = db.collection('guestNames').onSnapshot(snapshot => {
         const guestNamesData: Record<string, string> = {};
@@ -47,7 +40,7 @@ const App: React.FC = () => {
             guestNamesData[doc.id] = doc.data().name;
         });
         setGuestNames(guestNamesData);
-    }, handleError);
+    });
 
     // Clean up listeners on unmount
     return () => {
@@ -92,18 +85,6 @@ const App: React.FC = () => {
     return (
         <div className="min-h-screen flex items-center justify-center">
             <p className="text-xl text-gray-500">جاري تحميل البيانات...</p>
-        </div>
-    );
-  }
-
-  if (error) {
-    return (
-        <div className="min-h-screen flex items-center justify-center bg-red-50 p-4">
-            <div className="max-w-md w-full bg-white rounded-lg shadow-lg p-8 text-center">
-                <h2 className="text-2xl font-bold text-red-700 mb-4">خطأ في الاتصال</h2>
-                <p className="text-gray-600">{error}</p>
-                <p className="text-sm text-gray-500 mt-4">ملاحظة للمطور: قد تحتاج إلى إضافة نطاق `your-username.github.io` إلى قائمة النطاقات المعتمدة في إعدادات مصادقة Firebase.</p>
-            </div>
         </div>
     );
   }
