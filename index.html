@@ -1,519 +1,278 @@
-import React, { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { UserCircle, LogOut, CheckCircle, AlertCircle, Plus, Eye, EyeOff, Download, Upload } from 'lucide-react';
-
-export default function CandidateEvaluationApp() {
-  const [loggedIn, setLoggedIn] = useState(false);
-  const [currentMember, setCurrentMember] = useState('');
-  const [selectedMember, setSelectedMember] = useState('');
-  const [password, setPassword] = useState('');
-  const [candidateCode, setCandidateCode] = useState('');
-  const [showSuccess, setShowSuccess] = useState(false);
-  const [loginError, setLoginError] = useState('');
-  const [successMessage, setSuccessMessage] = useState('');
-  
-  const [scores, setScores] = useState({
-    qualification: '',
-    personality: '',
-    communication: '',
-    culture: ''
-  });
-
-  const [newCandidate, setNewCandidate] = useState({
-    code: '',
-    name: ''
-  });
-
-  const members = {
-    'المسؤول (Admin)': 'admin123',
-    'مدخل البيانات': 'dataentry2025',
-    'د. نورة بنت عبد الله الهديب': 'noura2025',
-    'د. محمد بن رفعت السوداني': 'mohamed2025',
-    'د. عبيد بن عياد حمر الوثيري': 'obaid2025',
-    'د. إشراق بنت سلامة هاشم مرعي': 'ishraq2025',
-    'د. نبيلة بنت سالم محمد سالم': 'nabila2025',
-    'د. رباب بنت صبري حسن محمد': 'rabab2025',
-    'أ. أشواق بنت نايف فاحس الزوين': 'ashwaq2025',
-    'ضيف 8': 'guest8',
-    'ضيف 9': 'guest9',
-    'ضيف 10': 'guest10'
-  };
-
-  const [evaluations, setEvaluations] = useState([]);
-  const [candidates, setCandidates] = useState([
-    { code: 'C001', name: 'رزان احمد عبدالله', visible: true },
-    { code: 'C002', name: 'ايمن إبراهيم اسلام', visible: true },
-    { code: 'C003', name: 'حسن السيد محمد العدوي', visible: true },
-    { code: 'C004', name: 'محمد محمد احمد عامر', visible: true }
-  ]);
-
-  const isAdmin = currentMember === 'المسؤول (Admin)';
-  const isDataEntry = currentMember === 'مدخل البيانات';
-  const canManageCandidates = isAdmin || isDataEntry;
-
-  const handleLogin = () => {
-    setLoginError('');
-    
-    if (!selectedMember) {
-      setLoginError('الرجاء اختيار العضو');
-      return;
-    }
-    
-    if (!password) {
-      setLoginError('الرجاء إدخال كلمة المرور');
-      return;
-    }
-    
-    if (members[selectedMember] === password) {
-      setCurrentMember(selectedMember);
-      setLoggedIn(true);
-      setPassword('');
-      setSelectedMember('');
-      setLoginError('');
-    } else {
-      setLoginError('كلمة المرور غير صحيحة. الرجاء المحاولة مرة أخرى.');
-      setPassword('');
-    }
-  };
-
-  const handleLogout = () => {
-    setLoggedIn(false);
-    setCurrentMember('');
-    setCandidateCode('');
-    setScores({
-      qualification: '',
-      personality: '',
-      communication: '',
-      culture: ''
-    });
-  };
-
-  const calculateTotal = () => {
-    const qual = parseFloat(scores.qualification) || 0;
-    const pers = parseFloat(scores.personality) || 0;
-    const comm = parseFloat(scores.communication) || 0;
-    const cult = parseFloat(scores.culture) || 0;
-    return qual + pers + comm + cult;
-  };
-
-  const handleSubmit = () => {
-    if (!candidateCode) {
-      alert('الرجاء إدخال كود المرشح');
-      return;
-    }
-
-    const alreadyEvaluated = evaluations.find(
-      e => e.member === currentMember && e.candidateCode === candidateCode
-    );
-    
-    if (alreadyEvaluated) {
-      alert('لقد قمت بتقييم هذا المرشح مسبقاً. لا يمكن التقييم مرة أخرى.');
-      return;
-    }
-
-    if (!scores.qualification || !scores.personality || !scores.communication || !scores.culture) {
-      alert('الرجاء إكمال جميع الحقول');
-      return;
-    }
-
-    const total = calculateTotal();
-    
-    const newEvaluation = {
-      member: currentMember,
-      candidateCode,
-      qualification: parseFloat(scores.qualification),
-      personality: parseFloat(scores.personality),
-      communication: parseFloat(scores.communication),
-      culture: parseFloat(scores.culture),
-      total
-    };
-
-    setEvaluations([...evaluations, newEvaluation]);
-    
-    setCandidateCode('');
-    setScores({
-      qualification: '',
-      personality: '',
-      communication: '',
-      culture: ''
-    });
-    
-    setShowSuccess(true);
-    setTimeout(() => setShowSuccess(false), 3000);
-  };
-
-  const calculateAverage = (code) => {
-    const candidateEvals = evaluations.filter(e => e.candidateCode === code);
-    if (candidateEvals.length === 0) return 0;
-    
-    const sum = candidateEvals.reduce((acc, curr) => acc + curr.total, 0);
-    return (sum / candidateEvals.length).toFixed(2);
-  };
-
-  const addCandidate = () => {
-    if (!newCandidate.code || !newCandidate.name) {
-      alert('الرجاء إدخال كود واسم المرشح');
-      return;
-    }
-
-    const codeExists = candidates.find(c => c.code === newCandidate.code);
-    if (codeExists) {
-      alert('هذا الكود موجود مسبقاً. الرجاء استخدام كود مختلف.');
-      return;
-    }
-
-    setCandidates([...candidates, { ...newCandidate, visible: true }]);
-    setNewCandidate({ code: '', name: '' });
-    setSuccessMessage('تم إضافة المرشح بنجاح');
-    setTimeout(() => setSuccessMessage(''), 3000);
-  };
-
-  const toggleCandidateVisibility = (code) => {
-    setCandidates(candidates.map(c => 
-      c.code === code ? { ...c, visible: !c.visible } : c
-    ));
-  };
-
-  const exportData = () => {
-    const data = {
-      candidates,
-      evaluations,
-      exportDate: new Date().toISOString()
-    };
-    
-    const dataStr = JSON.stringify(data, null, 2);
-    const dataBlob = new Blob([dataStr], { type: 'application/json' });
-    const url = URL.createObjectURL(dataBlob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `evaluations_${new Date().toISOString().split('T')[0]}.json`;
-    link.click();
-    URL.revokeObjectURL(url);
-  };
-
-  const importData = (event) => {
-    const file = event.target.files[0];
-    if (!file) return;
-
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      try {
-        const data = JSON.parse(e.target.result);
-        if (data.candidates && data.evaluations) {
-          setCandidates(data.candidates);
-          setEvaluations(data.evaluations);
-          setSuccessMessage('تم استيراد البيانات بنجاح');
-          setTimeout(() => setSuccessMessage(''), 3000);
-        } else {
-          alert('ملف غير صالح');
-        }
-      } catch (error) {
-        alert('خطأ في قراءة الملف');
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>نظام تقييم المرشحين – كلية الشمال للتمريض الأهلية</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+      :root {
+        --brand:#0f172a;
+        --muted:#6b7280;
+        --accent:#1d4ed8;
       }
-    };
-    reader.readAsText(file);
-    event.target.value = '';
-  };
+      body { 
+        font-family: 'Tajawal', system-ui, -apple-system, Segoe UI, Roboto, 'Helvetica Neue', Arial, 'Noto Sans', 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
+        background:#ffffff;
+        color:#111827;
+      }
+      .container-box {
+        box-shadow: 0 10px 25px rgba(2,6,23,0.06);
+      }
+      .hidden { display:none; }
+      @media print {
+        .print-hide { display:none !important; }
+        body { background:#fff; }
+        .container-box { box-shadow:none !important; border:1px solid #ddd; }
+        table { font-size:12px; }
+      }
+    </style>
+  </head>
+  <body class="min-h-screen p-4">
+    <header class="max-w-6xl mx-auto mb-4">
+      <h1 class="text-2xl md:text-3xl font-bold text-center text-[color:var(--brand)]">
+        نظام تقييم المرشحين – كلية الشمال للتمريض الأهلية
+      </h1>
+    </header>
 
-  const handlePrint = () => {
-    const printHTML = `
-      <!DOCTYPE html>
-      <html dir="rtl">
-      <head>
-        <meta charset="UTF-8">
-        <title>تقرير التقييمات</title>
-        <style>
-          body { font-family: Arial, sans-serif; padding: 20px; direction: rtl; }
-          h1, h2 { text-align: center; color: #1e40af; }
-          table { width: 100%; border-collapse: collapse; margin: 20px 0; }
-          th, td { border: 1px solid #ddd; padding: 8px; text-align: right; }
-          th { background-color: #f3f4f6; font-weight: bold; }
-          .header { text-align: center; margin-bottom: 30px; }
-          .section-title { margin-top: 30px; font-size: 18px; font-weight: bold; color: #1e40af; border-bottom: 2px solid #1e40af; padding-bottom: 5px; }
-        </style>
-      </head>
-      <body>
-        <div class="header">
-          <h1>تقرير تقييم المرشحين</h1>
-          <p>تاريخ الطباعة: ${new Date().toLocaleDateString('ar-SA')}</p>
+    <main class="max-w-6xl mx-auto bg-white rounded-2xl p-6 container-box">
+      <!-- Login -->
+      <section id="login-section" class="space-y-4">
+        <div>
+          <label class="block text-sm font-semibold text-gray-700 mb-2 text-right">اختر العضو</label>
+          <select id="member" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[color:var(--accent)] text-right">
+            <option value="">-- اختر العضو --</option>
+            <option>د. نورة بنت عبد الله الهديب</option>
+            <option>د. محمد بن رفعت السوداني</option>
+            <option>د. عبيد بن عياد حمر الوثيري</option>
+            <option>د. إشراق بنت سلامة هاشم مرعي</option>
+            <option>د. نبيلة بنت سالم محمد سالم</option>
+            <option>د. رباب بنت صبري حسن محمد</option>
+            <option>أ. أشواق بنت نايف فاحس الزوين</option>
+            <option>ضيف 8</option>
+            <option>ضيف 9</option>
+            <option>ضيف 10</option>
+          </select>
         </div>
-        <div class="section-title">متوسط التقييمات</div>
-        <table>
-          <thead><tr><th>الكود</th><th>اسم المرشح</th><th>عدد التقييمات</th><th>المتوسط</th></tr></thead>
-          <tbody>
-            ${candidates.filter(c => c.visible).map(candidate => {
-              const evals = evaluations.filter(e => e.candidateCode === candidate.code);
-              const avg = calculateAverage(candidate.code);
-              return `<tr><td>${candidate.code}</td><td>${candidate.name}</td><td>${evals.length}</td><td style="font-weight: bold;">${avg > 0 ? avg : '-'}</td></tr>`;
-            }).join('')}
-          </tbody>
-        </table>
-        <div class="section-title">سجل جميع التقييمات التفصيلي</div>
-        <table>
-          <thead><tr><th>المقيّم</th><th>كود المرشح</th><th>المؤهل</th><th>السمات</th><th>التواصل</th><th>الثقافة</th><th>الإجمالي</th></tr></thead>
-          <tbody>
-            ${evaluations.map(eval => `<tr><td>${eval.member}</td><td>${eval.candidateCode}</td><td>${eval.qualification}</td><td>${eval.personality}</td><td>${eval.communication}</td><td>${eval.culture}</td><td style="font-weight: bold;">${eval.total}</td></tr>`).join('')}
-          </tbody>
-        </table>
-      </body>
-      </html>
-    `;
-    
-    const printWindow = window.open('', '_blank');
-    printWindow.document.open();
-    printWindow.document.write(printHTML);
-    printWindow.document.close();
-    setTimeout(() => { printWindow.focus(); printWindow.print(); }, 250);
-  };
+        <div>
+          <label class="block text-sm font-semibold text-gray-700 mb-2 text-right">كلمة المرور</label>
+          <input type="password" id="password" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[color:var(--accent)] text-right" placeholder="أدخل كلمة المرور" />
+        </div>
+        <button id="login-btn" class="w-full bg-[color:var(--accent)] text-white py-2.5 rounded-lg hover:opacity-95 transition font-semibold">تسجيل الدخول</button>
+        <p id="login-error" class="text-red-600 text-center hidden">❌ كلمة المرور غير صحيحة</p>
+      </section>
 
-  if (!loggedIn) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
-        <Card className="w-full max-w-md">
-          <CardHeader className="text-center">
-            <CardTitle className="text-2xl font-bold text-gray-800">نظام تقييم المرشحين</CardTitle>
-            <p className="text-sm text-gray-600 mt-2">تسجيل دخول أعضاء اللجنة</p>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {loginError && (
-                <div className="bg-red-50 border-2 border-red-300 rounded-lg p-3">
-                  <div className="flex items-center gap-2 text-red-700">
-                    <AlertCircle size={20} />
-                    <span className="font-medium">{loginError}</span>
-                  </div>
-                </div>
-              )}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2 text-right">اختر العضو</label>
-                <select value={selectedMember} onChange={(e) => setSelectedMember(e.target.value)} className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-right">
-                  <option value="">-- اختر العضو --</option>
-                  {Object.keys(members).map(member => (
-                    <option key={member} value={member}>{member}</option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2 text-right">كلمة المرور</label>
-                <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} onKeyPress={(e) => e.key === 'Enter' && handleLogin()} className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-right" placeholder="أدخل كلمة المرور" />
-              </div>
-              <button onClick={handleLogin} className="w-full bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 transition-colors font-medium">تسجيل الدخول</button>
-            </div>
-            <div className="mt-4 p-3 bg-gray-50 rounded-lg text-right text-xs">
-              <p className="font-semibold mb-1">ملاحظة:</p>
-              <p>كل عضو له كلمة مرور خاصة.</p>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
-
-  const visibleCandidates = candidates.filter(c => c.visible);
-
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-4">
-      <div className="max-w-6xl mx-auto">
-        <div className="bg-white rounded-lg shadow-md p-4 mb-6 flex justify-between items-center">
-          <button onClick={handleLogout} className="flex items-center gap-2 text-red-600 hover:text-red-700">
-            <LogOut size={20} />
-            <span>تسجيل الخروج</span>
-          </button>
-          <div className="flex items-center gap-2">
-            <span className="font-semibold text-gray-800">{currentMember}</span>
-            <UserCircle size={24} className="text-blue-600" />
+      <!-- Form + Table -->
+      <section id="form-section" class="hidden">
+        <div class="flex flex-col md:flex-row items-center justify-between gap-3 mb-6">
+          <div class="text-right w-full md:w-auto">
+            <span class="text-sm text-[color:var(--muted)]">مرحباً</span>
+            <span id="user-name" class="font-bold text-[color:var(--brand)]"></span>
+          </div>
+          <div class="flex items-center gap-2 w-full md:w-auto">
+            <button id="print-btn" class="px-4 py-2 rounded-lg border border-gray-300 hover:bg-gray-50 transition text-sm">🖨️ طباعة</button>
+            <button id="logout-btn" class="px-4 py-2 rounded-lg bg-red-600 text-white hover:opacity-95 transition text-sm">تسجيل الخروج</button>
           </div>
         </div>
 
-        {(showSuccess || successMessage) && (
-          <Alert className="mb-6 bg-green-50 border-green-200">
-            <CheckCircle className="h-4 w-4 text-green-600" />
-            <AlertDescription className="text-green-800 text-right">{successMessage || 'تم حفظ التقييم بنجاح!'}</AlertDescription>
-          </Alert>
-        )}
-
-        {canManageCandidates && (
-          <Card className="mb-6">
-            <CardHeader><CardTitle className="text-right">إدارة المرشحين</CardTitle></CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <div className="grid md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2 text-right">كود المرشح</label>
-                    <input type="text" value={newCandidate.code} onChange={(e) => setNewCandidate({...newCandidate, code: e.target.value})} className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-right" placeholder="مثال: C005" />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2 text-right">اسم المرشح</label>
-                    <input type="text" value={newCandidate.name} onChange={(e) => setNewCandidate({...newCandidate, name: e.target.value})} className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-right" placeholder="الاسم الكامل" />
-                  </div>
-                </div>
-                <button onClick={addCandidate} className="w-full bg-green-600 text-white py-2 rounded-lg hover:bg-green-700 transition-colors font-medium flex items-center justify-center gap-2">
-                  <Plus size={20} />
-                  <span>إضافة مرشح جديد</span>
-                </button>
-                <div className="mt-6">
-                  <h3 className="font-semibold text-gray-800 mb-3 text-right">قائمة المرشحين:</h3>
-                  <div className="space-y-2">
-                    {candidates.map(candidate => (
-                      <div key={candidate.code} className="flex items-center justify-between bg-gray-50 p-3 rounded-lg">
-                        <button onClick={() => toggleCandidateVisibility(candidate.code)} className={`px-3 py-1 rounded-lg text-sm font-medium flex items-center gap-2 ${candidate.visible ? 'bg-yellow-100 text-yellow-700 hover:bg-yellow-200' : 'bg-green-100 text-green-700 hover:bg-green-200'}`}>
-                          {candidate.visible ? <EyeOff size={16} /> : <Eye size={16} />}
-                          {candidate.visible ? 'إخفاء' : 'إظهار'}
-                        </button>
-                        <div className="flex items-center gap-2 text-right">
-                          <span className={candidate.visible ? 'text-gray-800' : 'text-gray-400 line-through'}>{candidate.name}</span>
-                          <span className="font-mono text-sm text-gray-600">{candidate.code}</span>
-                          {candidate.visible ? <span className="text-green-600">✓</span> : <span className="text-gray-400">🔒</span>}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        )}
-
-        {isAdmin && (
-          <Card className="mb-6">
-            <CardHeader><CardTitle className="text-right">إدارة البيانات</CardTitle></CardHeader>
-            <CardContent>
-              <div className="flex gap-4">
-                <button onClick={exportData} className="flex-1 bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 transition-colors font-medium flex items-center justify-center gap-2">
-                  <Download size={20} />
-                  <span>تصدير البيانات</span>
-                </button>
-                <label className="flex-1 bg-green-600 text-white py-2 rounded-lg hover:bg-green-700 transition-colors font-medium flex items-center justify-center gap-2 cursor-pointer">
-                  <Upload size={20} />
-                  <span>استيراد البيانات</span>
-                  <input type="file" accept=".json" onChange={importData} className="hidden" />
-                </label>
-              </div>
-            </CardContent>
-          </Card>
-        )}
-
-        {!isDataEntry && (
-          <div className="grid md:grid-cols-2 gap-6">
-            <Card>
-              <CardHeader><CardTitle className="text-right">تقييم مرشح</CardTitle></CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2 text-right">كود المرشح</label>
-                    <select value={candidateCode} onChange={(e) => setCandidateCode(e.target.value)} className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-right">
-                      <option value="">اختر المرشح</option>
-                      {visibleCandidates.map(c => {
-                        const alreadyEvaluated = evaluations.find(e => e.member === currentMember && e.candidateCode === c.code);
-                        return (<option key={c.code} value={c.code} disabled={alreadyEvaluated}>{c.code} - {c.name} {alreadyEvaluated ? '(تم التقييم ✓)' : ''}</option>);
-                      })}
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2 text-right">ملاءمة المؤهل العلمي والخبرات (من 40)</label>
-                    <input type="number" value={scores.qualification} onChange={(e) => setScores({...scores, qualification: e.target.value})} className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-right" min="0" max="40" step="0.5" />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2 text-right">السمات الشخصية (من 30)</label>
-                    <input type="number" value={scores.personality} onChange={(e) => setScores({...scores, personality: e.target.value})} className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-right" min="0" max="30" step="0.5" />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2 text-right">مهارات التواصل (من 20)</label>
-                    <input type="number" value={scores.communication} onChange={(e) => setScores({...scores, communication: e.target.value})} className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-right" min="0" max="20" step="0.5" />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2 text-right">الثقافة العامة (من 10)</label>
-                    <input type="number" value={scores.culture} onChange={(e) => setScores({...scores, culture: e.target.value})} className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-right" min="0" max="10" step="0.5" />
-                  </div>
-                  <div className="bg-blue-50 p-3 rounded-lg text-right">
-                    <span className="text-sm text-gray-600">الإجمالي: </span>
-                    <span className="text-xl font-bold text-blue-600">{calculateTotal()} / 100</span>
-                  </div>
-                  <button onClick={handleSubmit} className="w-full bg-green-600 text-white py-2 rounded-lg hover:bg-green-700 transition-colors font-medium">حفظ التقييم</button>
-                </div>
-              </CardContent>
-            </Card>
-
-            {isAdmin && (
-              <Card>
-                <CardHeader><CardTitle className="text-right">متوسط التقييمات (للإدارة فقط)</CardTitle></CardHeader>
-                <CardContent>
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-sm text-right">
-                      <thead className="bg-gray-50">
-                        <tr>
-                          <th className="p-2 border">المتوسط</th>
-                          <th className="p-2 border">عدد التقييمات</th>
-                          <th className="p-2 border">اسم المرشح</th>
-                          <th className="p-2 border">الكود</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {visibleCandidates.map(candidate => {
-                          const evals = evaluations.filter(e => e.candidateCode === candidate.code);
-                          const avg = calculateAverage(candidate.code);
-                          return (
-                            <tr key={candidate.code} className="hover:bg-gray-50">
-                              <td className="p-2 border font-bold text-blue-600">{avg > 0 ? avg : '-'}</td>
-                              <td className="p-2 border">{evals.length}</td>
-                              <td className="p-2 border">{candidate.name}</td>
-                              <td className="p-2 border">{candidate.code}</td>
-                            </tr>
-                          );
-                        })}
-                      </tbody>
-                    </table>
-                  </div>
-                  {evaluations.length === 0 && (<p className="text-center text-gray-500 mt-4 text-sm">لا توجد تقييمات بعد</p>)}
-                </CardContent>
-              </Card>
-            )}
+        <div class="grid md:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-sm font-semibold text-gray-700 mb-2 text-right">كود المرشح</label>
+            <input type="text" id="candidate-code" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[color:var(--accent)] text-right" placeholder="مثال: C001" />
           </div>
-        )}
+          <div>
+            <label class="block text-sm font-semibold text-gray-700 mb-2 text-right">اسم المرشح</label>
+            <input type="text" id="candidate-name" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[color:var(--accent)] text-right" placeholder="مثال: أحمد محمد علي" />
+          </div>
 
-        {evaluations.length > 0 && isAdmin && (
-          <Card className="mt-6">
-            <CardHeader className="flex flex-row items-center justify-between">
-              <button onClick={handlePrint} className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors font-medium flex items-center gap-2">
-                <span>🖨️</span>
-                <span>طباعة التقييمات</span>
-              </button>
-              <CardTitle className="text-right">سجل جميع التقييمات (للإدارة فقط)</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="overflow-x-auto">
-                <table className="w-full text-xs text-right">
-                  <thead className="bg-gray-50">
-                    <tr>
-                      <th className="p-2 border">الإجمالي</th>
-                      <th className="p-2 border">ثقافة</th>
-                      <th className="p-2 border">تواصل</th>
-                      <th className="p-2 border">سمات</th>
-                      <th className="p-2 border">مؤهل</th>
-                      <th className="p-2 border">كود المرشح</th>
-                      <th className="p-2 border">المقيّم</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {evaluations.map((eval, idx) => (
-                      <tr key={idx} className="hover:bg-gray-50">
-                        <td className="p-2 border font-bold">{eval.total}</td>
-                        <td className="p-2 border">{eval.culture}</td>
-                        <td className="p-2 border">{eval.communication}</td>
-                        <td className="p-2 border">{eval.personality}</td>
-                        <td className="p-2 border">{eval.qualification}</td>
-                        <td className="p-2 border">{eval.candidateCode}</td>
-                        <td className="p-2 border text-xs">{eval.member}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </CardContent>
-          </Card>
-        )}
-      </div>
-    </div>
-  );
-}
+          <div>
+            <label class="block text-sm font-semibold text-gray-700 mb-2 text-right">ملاءمة المؤهل العلمي والخبرات (من 40)</label>
+            <input type="number" id="qualification" min="0" max="40" step="0.5" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[color:var(--accent)] text-right" />
+          </div>
+          <div>
+            <label class="block text-sm font-semibold text-gray-700 mb-2 text-right">السمات الشخصية (من 30)</label>
+            <input type="number" id="personality" min="0" max="30" step="0.5" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[color:var(--accent)] text-right" />
+          </div>
+          <div>
+            <label class="block text-sm font-semibold text-gray-700 mb-2 text-right">مهارات التواصل (من 20)</label>
+            <input type="number" id="communication" min="0" max="20" step="0.5" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[color:var(--accent)] text-right" />
+          </div>
+          <div>
+            <label class="block text-sm font-semibold text-gray-700 mb-2 text-right">الثقافة العامة (من 10)</label>
+            <input type="number" id="culture" min="0" max="10" step="0.5" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[color:var(--accent)] text-right" />
+          </div>
+        </div>
+
+        <div class="bg-blue-50 p-3 rounded-lg text-right mt-3">
+          <span class="text-sm text-[color:var(--muted)]">الإجمالي:</span>
+          <span id="total" class="text-xl font-bold text-[color:var(--accent)]">0 / 100</span>
+        </div>
+
+        <button id="save-btn" class="mt-4 w-full bg-green-600 text-white py-2.5 rounded-lg hover:opacity-95 transition font-semibold">حفظ التقييم</button>
+        <p id="save-msg" class="text-green-700 mt-3 text-center hidden">✅ تم حفظ التقييم بنجاح!</p>
+
+        <hr class="my-8" />
+
+        <h2 class="text-xl md:text-2xl font-bold text-[color:var(--brand)] mb-3">جميع التقييمات</h2>
+        <div id="table-container" class="overflow-x-auto">
+          <table class="w-full border text-sm text-right">
+            <thead class="bg-gray-50">
+              <tr>
+                <th class="p-2 border">التاريخ</th>
+                <th class="p-2 border">العضو</th>
+                <th class="p-2 border">الكود</th>
+                <th class="p-2 border">الاسم</th>
+                <th class="p-2 border">المؤهل</th>
+                <th class="p-2 border">السمات</th>
+                <th class="p-2 border">التواصل</th>
+                <th class="p-2 border">الثقافة</th>
+                <th class="p-2 border">الإجمالي</th>
+              </tr>
+            </thead>
+            <tbody id="eval-table"></tbody>
+          </table>
+        </div>
+
+        <footer class="mt-8 text-center text-xs text-[color:var(--muted)] print-hide">
+          وحدة التطوير والجودة © كلية الشمال للتمريض الأهلية – <span id="year"></span>
+        </footer>
+      </section>
+    </main>
+
+    <script>
+      // ✅ رابط Google Apps Script (منشور كـ Web App)
+      const scriptURL = "https://script.google.com/macros/s/AKfycbyGGK_3CQOALxLKurILuHHWsdy75uDWz4MsQbg9A32gRY_q6N_OrVOVeyA6vGgFQiwl/exec";
+
+      // أعضاء اللجنة + كلمات المرور
+      const members = {
+        "د. نورة بنت عبد الله الهديب": "noura2025",
+        "د. محمد بن رفعت السوداني": "mohamed2025",
+        "د. عبيد بن عياد حمر الوثيري": "obaid2025",
+        "د. إشراق بنت سلامة هاشم مرعي": "ishraq2025",
+        "د. نبيلة بنت سالم محمد سالم": "nabila2025",
+        "د. رباب بنت صبري حسن محمد": "rabab2025",
+        "أ. أشواق بنت نايف فاحس الزوين": "ashwaq2025",
+        "ضيف 8": "guest8",
+        "ضيف 9": "guest9",
+        "ضيف 10": "guest10"
+      };
+
+      const loginSection = document.getElementById("login-section");
+      const formSection = document.getElementById("form-section");
+      const loginBtn = document.getElementById("login-btn");
+      const logoutBtn = document.getElementById("logout-btn");
+      const saveBtn = document.getElementById("save-btn");
+      const printBtn = document.getElementById("print-btn");
+      const totalField = document.getElementById("total");
+      const saveMsg = document.getElementById("save-msg");
+      const yearSpan = document.getElementById("year");
+      yearSpan.textContent = new Date().getFullYear();
+
+      let currentMember = "";
+
+      // تسجيل الدخول
+      loginBtn.addEventListener("click", () => {
+        const member = document.getElementById("member").value;
+        const password = document.getElementById("password").value;
+        const error = document.getElementById("login-error");
+
+        if (members[member] === password) {
+          currentMember = member;
+          document.getElementById("user-name").textContent = member;
+          loginSection.classList.add("hidden");
+          formSection.classList.remove("hidden");
+          loadEvaluations();
+        } else {
+          error.textContent = "❌ كلمة المرور غير صحيحة";
+          error.classList.remove("hidden");
+        }
+      });
+
+      // تسجيل الخروج
+      logoutBtn.addEventListener("click", () => {
+        currentMember = "";
+        document.getElementById("password").value = "";
+        loginSection.classList.remove("hidden");
+        formSection.classList.add("hidden");
+      });
+
+      // طباعة
+      printBtn.addEventListener("click", () => window.print());
+
+      // حساب الإجمالي
+      ["qualification","personality","communication","culture"].forEach(id => {
+        document.getElementById(id).addEventListener("input", () => {
+          const q = +document.getElementById("qualification").value || 0;
+          const p = +document.getElementById("personality").value || 0;
+          const c = +document.getElementById("communication").value || 0;
+          const cu = +document.getElementById("culture").value || 0;
+          totalField.textContent = `${q + p + c + cu} / 100`;
+        });
+      });
+
+      // حفظ البيانات في Google Sheet
+      saveBtn.addEventListener("click", () => {
+        const data = {
+          member: currentMember,
+          candidateCode: document.getElementById("candidate-code").value.trim(),
+          candidateName: document.getElementById("candidate-name").value.trim(),
+          qualification: document.getElementById("qualification").value.trim(),
+          personality: document.getElementById("personality").value.trim(),
+          communication: document.getElementById("communication").value.trim(),
+          culture: document.getElementById("culture").value.trim(),
+          total: totalField.textContent.split("/")[0].trim()
+        };
+
+        // تحقق بسيط
+        if (!data.member || !data.candidateCode || !data.candidateName) {
+          alert("الرجاء تعبئة العضو، كود المرشح، واسم المرشح");
+          return;
+        }
+
+        fetch(scriptURL, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(data)
+        })
+        .then(res => res.json())
+        .then(() => {
+          saveMsg.classList.remove("hidden");
+          // تفريغ الحقول (عدا العضو)
+          ["candidate-code","candidate-name","qualification","personality","communication","culture"].forEach(id => document.getElementById(id).value = "");
+          totalField.textContent = "0 / 100";
+          loadEvaluations();
+          setTimeout(() => saveMsg.classList.add("hidden"), 2500);
+        })
+        .catch(err => alert("خطأ أثناء الحفظ: " + err));
+      });
+
+      // قراءة جميع التقييمات
+      function loadEvaluations() {
+        fetch(scriptURL)
+          .then(res => res.json())
+          .then(json => {
+            const table = document.getElementById("eval-table");
+            table.innerHTML = "";
+            (json.data || []).forEach(row => {
+              const tr = document.createElement("tr");
+              const dateStr = row.date ? new Date(row.date).toLocaleDateString("ar-SA") : "-";
+              tr.innerHTML = `
+                <td class="border p-2">${dateStr}</td>
+                <td class="border p-2">${row.member ?? "-"}</td>
+                <td class="border p-2">${row.candidateCode ?? "-"}</td>
+                <td class="border p-2">${row.candidateName ?? "-"}</td>
+                <td class="border p-2">${row.qualification ?? "-"}</td>
+                <td class="border p-2">${row.personality ?? "-"}</td>
+                <td class="border p-2">${row.communication ?? "-"}</td>
+                <td class="border p-2">${row.culture ?? "-"}</td>
+                <td class="border p-2 font-bold text-[color:var(--brand)]">${row.total ?? "-"}</td>
+              `;
+              table.appendChild(tr);
+            });
+          })
+          .catch(err => console.error("خطأ أثناء قراءة البيانات:", err));
+      }
+    </script>
+  </body>
+</html>
