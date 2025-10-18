@@ -1,0 +1,5 @@
+{
+  "name": "Candidate Evaluation System",
+  "description": "A simple web application for committee members to log in, evaluate job candidates based on specific criteria, and view the average scores for each candidate.",
+  "requestFramePermissions": []
+}
