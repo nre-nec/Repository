@@ -3,267 +3,62 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>نظام تقييم المرشحين – كلية الشمال للتمريض الأهلية</title>
+    <title>نظام تقييم المرشحين</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700&display=swap" rel="stylesheet">
     <style>
-      :root {
-        --brand:#0f172a;
-        --muted:#6b7280;
-        --accent:#1d4ed8;
+      body {
+        font-family: 'Cairo', sans-serif;
       }
-      body { 
-        font-family: 'Tajawal', system-ui, -apple-system, Segoe UI, Roboto, 'Helvetica Neue', Arial, 'Noto Sans', 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
-        background:#ffffff;
-        color:#111827;
-      }
-      .container-box {
-        box-shadow: 0 10px 25px rgba(2,6,23,0.06);
-      }
-      .hidden { display:none; }
       @media print {
-        .print-hide { display:none !important; }
-        body { background:#fff; }
-        .container-box { box-shadow:none !important; border:1px solid #ddd; }
-        table { font-size:12px; }
+        body {
+          background-color: white;
+        }
+        .print-hide {
+          display: none !important;
+        }
+        #root {
+          padding: 0;
+          margin: 0;
+        }
+        #evaluations-log-section {
+          box-shadow: none;
+          border: 1px solid #ccc;
+          margin: 0;
+          padding: 1rem;
+        }
+        .container {
+            width: 100% !important;
+            max-width: 100% !important;
+            padding: 0 !important;
+            margin: 0 !important;
+        }
+        table {
+            width: 100%;
+            font-size: 10px;
+        }
+        h2 {
+            font-size: 1.25rem;
+        }
       }
     </style>
-  </head>
-  <body class="min-h-screen p-4">
-    <header class="max-w-6xl mx-auto mb-4">
-      <h1 class="text-2xl md:text-3xl font-bold text-center text-[color:var(--brand)]">
-        نظام تقييم المرشحين – كلية الشمال للتمريض الأهلية
-      </h1>
-    </header>
-
-    <main class="max-w-6xl mx-auto bg-white rounded-2xl p-6 container-box">
-      <!-- Login -->
-      <section id="login-section" class="space-y-4">
-        <div>
-          <label class="block text-sm font-semibold text-gray-700 mb-2 text-right">اختر العضو</label>
-          <select id="member" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[color:var(--accent)] text-right">
-            <option value="">-- اختر العضو --</option>
-            <option>د. نورة بنت عبد الله الهديب</option>
-            <option>د. محمد بن رفعت السوداني</option>
-            <option>د. عبيد بن عياد حمر الوثيري</option>
-            <option>د. إشراق بنت سلامة هاشم مرعي</option>
-            <option>د. نبيلة بنت سالم محمد سالم</option>
-            <option>د. رباب بنت صبري حسن محمد</option>
-            <option>أ. أشواق بنت نايف فاحس الزوين</option>
-            <option>ضيف 8</option>
-            <option>ضيف 9</option>
-            <option>ضيف 10</option>
-          </select>
-        </div>
-        <div>
-          <label class="block text-sm font-semibold text-gray-700 mb-2 text-right">كلمة المرور</label>
-          <input type="password" id="password" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[color:var(--accent)] text-right" placeholder="أدخل كلمة المرور" />
-        </div>
-        <button id="login-btn" class="w-full bg-[color:var(--accent)] text-white py-2.5 rounded-lg hover:opacity-95 transition font-semibold">تسجيل الدخول</button>
-        <p id="login-error" class="text-red-600 text-center hidden">❌ كلمة المرور غير صحيحة</p>
-      </section>
-
-      <!-- Form + Table -->
-      <section id="form-section" class="hidden">
-        <div class="flex flex-col md:flex-row items-center justify-between gap-3 mb-6">
-          <div class="text-right w-full md:w-auto">
-            <span class="text-sm text-[color:var(--muted)]">مرحباً</span>
-            <span id="user-name" class="font-bold text-[color:var(--brand)]"></span>
-          </div>
-          <div class="flex items-center gap-2 w-full md:w-auto">
-            <button id="print-btn" class="px-4 py-2 rounded-lg border border-gray-300 hover:bg-gray-50 transition text-sm">🖨️ طباعة</button>
-            <button id="logout-btn" class="px-4 py-2 rounded-lg bg-red-600 text-white hover:opacity-95 transition text-sm">تسجيل الخروج</button>
-          </div>
-        </div>
-
-        <div class="grid md:grid-cols-2 gap-4">
-          <div>
-            <label class="block text-sm font-semibold text-gray-700 mb-2 text-right">كود المرشح</label>
-            <input type="text" id="candidate-code" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[color:var(--accent)] text-right" placeholder="مثال: C001" />
-          </div>
-          <div>
-            <label class="block text-sm font-semibold text-gray-700 mb-2 text-right">اسم المرشح</label>
-            <input type="text" id="candidate-name" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[color:var(--accent)] text-right" placeholder="مثال: أحمد محمد علي" />
-          </div>
-
-          <div>
-            <label class="block text-sm font-semibold text-gray-700 mb-2 text-right">ملاءمة المؤهل العلمي والخبرات (من 40)</label>
-            <input type="number" id="qualification" min="0" max="40" step="0.5" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[color:var(--accent)] text-right" />
-          </div>
-          <div>
-            <label class="block text-sm font-semibold text-gray-700 mb-2 text-right">السمات الشخصية (من 30)</label>
-            <input type="number" id="personality" min="0" max="30" step="0.5" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[color:var(--accent)] text-right" />
-          </div>
-          <div>
-            <label class="block text-sm font-semibold text-gray-700 mb-2 text-right">مهارات التواصل (من 20)</label>
-            <input type="number" id="communication" min="0" max="20" step="0.5" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[color:var(--accent)] text-right" />
-          </div>
-          <div>
-            <label class="block text-sm font-semibold text-gray-700 mb-2 text-right">الثقافة العامة (من 10)</label>
-            <input type="number" id="culture" min="0" max="10" step="0.5" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[color:var(--accent)] text-right" />
-          </div>
-        </div>
-
-        <div class="bg-blue-50 p-3 rounded-lg text-right mt-3">
-          <span class="text-sm text-[color:var(--muted)]">الإجمالي:</span>
-          <span id="total" class="text-xl font-bold text-[color:var(--accent)]">0 / 100</span>
-        </div>
-
-        <button id="save-btn" class="mt-4 w-full bg-green-600 text-white py-2.5 rounded-lg hover:opacity-95 transition font-semibold">حفظ التقييم</button>
-        <p id="save-msg" class="text-green-700 mt-3 text-center hidden">✅ تم حفظ التقييم بنجاح!</p>
-
-        <hr class="my-8" />
-
-        <h2 class="text-xl md:text-2xl font-bold text-[color:var(--brand)] mb-3">جميع التقييمات</h2>
-        <div id="table-container" class="overflow-x-auto">
-          <table class="w-full border text-sm text-right">
-            <thead class="bg-gray-50">
-              <tr>
-                <th class="p-2 border">التاريخ</th>
-                <th class="p-2 border">العضو</th>
-                <th class="p-2 border">الكود</th>
-                <th class="p-2 border">الاسم</th>
-                <th class="p-2 border">المؤهل</th>
-                <th class="p-2 border">السمات</th>
-                <th class="p-2 border">التواصل</th>
-                <th class="p-2 border">الثقافة</th>
-                <th class="p-2 border">الإجمالي</th>
-              </tr>
-            </thead>
-            <tbody id="eval-table"></tbody>
-          </table>
-        </div>
-
-        <footer class="mt-8 text-center text-xs text-[color:var(--muted)] print-hide">
-          وحدة التطوير والجودة © كلية الشمال للتمريض الأهلية – <span id="year"></span>
-        </footer>
-      </section>
-    </main>
-
-    <script>
-      // ✅ رابط Google Apps Script الجديد
-      const scriptURL = "https://script.google.com/macros/s/AKfycbxjy4RyyIjGPvuZKmwutO43zTfRIZ13tVXwV5U0iGLZYLRHo_G1j1x80mvzE695vwEa/exec";
-
-      const members = {
-        "د. نورة بنت عبد الله الهديب": "noura2025",
-        "د. محمد بن رفعت السوداني": "mohamed2025",
-        "د. عبيد بن عياد حمر الوثيري": "obaid2025",
-        "د. إشراق بنت سلامة هاشم مرعي": "ishraq2025",
-        "د. نبيلة بنت سالم محمد سالم": "nabila2025",
-        "د. رباب بنت صبري حسن محمد": "rabab2025",
-        "أ. أشواق بنت نايف فاحس الزوين": "ashwaq2025",
-        "ضيف 8": "guest8",
-        "ضيف 9": "guest9",
-        "ضيف 10": "guest10"
-      };
-
-      const loginSection = document.getElementById("login-section");
-      const formSection = document.getElementById("form-section");
-      const loginBtn = document.getElementById("login-btn");
-      const logoutBtn = document.getElementById("logout-btn");
-      const saveBtn = document.getElementById("save-btn");
-      const printBtn = document.getElementById("print-btn");
-      const totalField = document.getElementById("total");
-      const saveMsg = document.getElementById("save-msg");
-      const yearSpan = document.getElementById("year");
-      yearSpan.textContent = new Date().getFullYear();
-
-      let currentMember = "";
-
-      loginBtn.addEventListener("click", () => {
-        const member = document.getElementById("member").value;
-        const password = document.getElementById("password").value;
-        const error = document.getElementById("login-error");
-
-        if (members[member] === password) {
-          currentMember = member;
-          document.getElementById("user-name").textContent = member;
-          loginSection.classList.add("hidden");
-          formSection.classList.remove("hidden");
-          loadEvaluations();
-        } else {
-          error.textContent = "❌ كلمة المرور غير صحيحة";
-          error.classList.remove("hidden");
-        }
-      });
-
-      logoutBtn.addEventListener("click", () => {
-        currentMember = "";
-        document.getElementById("password").value = "";
-        loginSection.classList.remove("hidden");
-        formSection.classList.add("hidden");
-      });
-
-      printBtn.addEventListener("click", () => window.print());
-
-      ["qualification","personality","communication","culture"].forEach(id => {
-        document.getElementById(id).addEventListener("input", () => {
-          const q = +document.getElementById("qualification").value || 0;
-          const p = +document.getElementById("personality").value || 0;
-          const c = +document.getElementById("communication").value || 0;
-          const cu = +document.getElementById("culture").value || 0;
-          totalField.textContent = `${q + p + c + cu} / 100`;
-        });
-      });
-
-      saveBtn.addEventListener("click", () => {
-        const data = {
-          member: currentMember,
-          candidateCode: document.getElementById("candidate-code").value.trim(),
-          candidateName: document.getElementById("candidate-name").value.trim(),
-          qualification: document.getElementById("qualification").value.trim(),
-          personality: document.getElementById("personality").value.trim(),
-          communication: document.getElementById("communication").value.trim(),
-          culture: document.getElementById("culture").value.trim(),
-          total: totalField.textContent.split("/")[0].trim()
-        };
-
-        if (!data.member || !data.candidateCode || !data.candidateName) {
-          alert("الرجاء تعبئة العضو، كود المرشح، واسم المرشح");
-          return;
-        }
-
-        fetch(scriptURL, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(data)
-        })
-        .then(res => res.json())
-        .then(() => {
-          saveMsg.classList.remove("hidden");
-          ["candidate-code","candidate-name","qualification","personality","communication","culture"].forEach(id => document.getElementById(id).value = "");
-          totalField.textContent = "0 / 100";
-          loadEvaluations();
-          setTimeout(() => saveMsg.classList.add("hidden"), 2500);
-        })
-        .catch(err => alert("خطأ أثناء الحفظ: " + err));
-      });
-
-      function loadEvaluations() {
-        fetch(scriptURL)
-          .then(res => res.json())
-          .then(json => {
-            const table = document.getElementById("eval-table");
-            table.innerHTML = "";
-            (json.data || []).forEach(row => {
-              const tr = document.createElement("tr");
-              const dateStr = row.date ? new Date(row.date).toLocaleDateString("ar-SA") : "-";
-              tr.innerHTML = `
-                <td class="border p-2">${dateStr}</td>
-                <td class="border p-2">${row.member ?? "-"}</td>
-                <td class="border p-2">${row.candidateCode ?? "-"}</td>
-                <td class="border p-2">${row.candidateName ?? "-"}</td>
-                <td class="border p-2">${row.qualification ?? "-"}</td>
-                <td class="border p-2">${row.personality ?? "-"}</td>
-                <td class="border p-2">${row.communication ?? "-"}</td>
-                <td class="border p-2">${row.culture ?? "-"}</td>
-                <td class="border p-2 font-bold text-[color:var(--brand)]">${row.total ?? "-"}</td>
-              `;
-              table.appendChild(tr);
-            });
-          })
-          .catch(err => console.error("خطأ أثناء قراءة البيانات:", err));
-      }
-    </script>
+  <script type="importmap">
+{
+  "imports": {
+    "react/": "https://aistudiocdn.com/react@^19.2.0/",
+    "react": "https://aistudiocdn.com/react@^19.2.0",
+    "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.0/"
+  }
+}
+</script>
+</head>
+  <body class="bg-gray-100">
+    <div id="root"></div>
+    <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/9.6.7/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.7/firebase-firestore-compat.js"></script>
+    <script type="module" src="/index.tsx"></script>
   </body>
 </html>
