@@ -1,66 +1,519 @@
-<!DOCTYPE html>
-<html lang="ar" dir="rtl">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>نظام تقييم المرشحين</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700&display=swap" rel="stylesheet">
-    <style>
-      body {
-        font-family: 'Cairo', sans-serif;
+import React, { useState } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { UserCircle, LogOut, CheckCircle, AlertCircle, Plus, Eye, EyeOff, Download, Upload } from 'lucide-react';
+
+export default function CandidateEvaluationApp() {
+  const [loggedIn, setLoggedIn] = useState(false);
+  const [currentMember, setCurrentMember] = useState('');
+  const [selectedMember, setSelectedMember] = useState('');
+  const [password, setPassword] = useState('');
+  const [candidateCode, setCandidateCode] = useState('');
+  const [showSuccess, setShowSuccess] = useState(false);
+  const [loginError, setLoginError] = useState('');
+  const [successMessage, setSuccessMessage] = useState('');
+  
+  const [scores, setScores] = useState({
+    qualification: '',
+    personality: '',
+    communication: '',
+    culture: ''
+  });
+
+  const [newCandidate, setNewCandidate] = useState({
+    code: '',
+    name: ''
+  });
+
+  const members = {
+    'المسؤول (Admin)': 'admin123',
+    'مدخل البيانات': 'dataentry2025',
+    'د. نورة بنت عبد الله الهديب': 'noura2025',
+    'د. محمد بن رفعت السوداني': 'mohamed2025',
+    'د. عبيد بن عياد حمر الوثيري': 'obaid2025',
+    'د. إشراق بنت سلامة هاشم مرعي': 'ishraq2025',
+    'د. نبيلة بنت سالم محمد سالم': 'nabila2025',
+    'د. رباب بنت صبري حسن محمد': 'rabab2025',
+    'أ. أشواق بنت نايف فاحس الزوين': 'ashwaq2025',
+    'ضيف 8': 'guest8',
+    'ضيف 9': 'guest9',
+    'ضيف 10': 'guest10'
+  };
+
+  const [evaluations, setEvaluations] = useState([]);
+  const [candidates, setCandidates] = useState([
+    { code: 'C001', name: 'رزان احمد عبدالله', visible: true },
+    { code: 'C002', name: 'ايمن إبراهيم اسلام', visible: true },
+    { code: 'C003', name: 'حسن السيد محمد العدوي', visible: true },
+    { code: 'C004', name: 'محمد محمد احمد عامر', visible: true }
+  ]);
+
+  const isAdmin = currentMember === 'المسؤول (Admin)';
+  const isDataEntry = currentMember === 'مدخل البيانات';
+  const canManageCandidates = isAdmin || isDataEntry;
+
+  const handleLogin = () => {
+    setLoginError('');
+    
+    if (!selectedMember) {
+      setLoginError('الرجاء اختيار العضو');
+      return;
+    }
+    
+    if (!password) {
+      setLoginError('الرجاء إدخال كلمة المرور');
+      return;
+    }
+    
+    if (members[selectedMember] === password) {
+      setCurrentMember(selectedMember);
+      setLoggedIn(true);
+      setPassword('');
+      setSelectedMember('');
+      setLoginError('');
+    } else {
+      setLoginError('كلمة المرور غير صحيحة. الرجاء المحاولة مرة أخرى.');
+      setPassword('');
+    }
+  };
+
+  const handleLogout = () => {
+    setLoggedIn(false);
+    setCurrentMember('');
+    setCandidateCode('');
+    setScores({
+      qualification: '',
+      personality: '',
+      communication: '',
+      culture: ''
+    });
+  };
+
+  const calculateTotal = () => {
+    const qual = parseFloat(scores.qualification) || 0;
+    const pers = parseFloat(scores.personality) || 0;
+    const comm = parseFloat(scores.communication) || 0;
+    const cult = parseFloat(scores.culture) || 0;
+    return qual + pers + comm + cult;
+  };
+
+  const handleSubmit = () => {
+    if (!candidateCode) {
+      alert('الرجاء إدخال كود المرشح');
+      return;
+    }
+
+    const alreadyEvaluated = evaluations.find(
+      e => e.member === currentMember && e.candidateCode === candidateCode
+    );
+    
+    if (alreadyEvaluated) {
+      alert('لقد قمت بتقييم هذا المرشح مسبقاً. لا يمكن التقييم مرة أخرى.');
+      return;
+    }
+
+    if (!scores.qualification || !scores.personality || !scores.communication || !scores.culture) {
+      alert('الرجاء إكمال جميع الحقول');
+      return;
+    }
+
+    const total = calculateTotal();
+    
+    const newEvaluation = {
+      member: currentMember,
+      candidateCode,
+      qualification: parseFloat(scores.qualification),
+      personality: parseFloat(scores.personality),
+      communication: parseFloat(scores.communication),
+      culture: parseFloat(scores.culture),
+      total
+    };
+
+    setEvaluations([...evaluations, newEvaluation]);
+    
+    setCandidateCode('');
+    setScores({
+      qualification: '',
+      personality: '',
+      communication: '',
+      culture: ''
+    });
+    
+    setShowSuccess(true);
+    setTimeout(() => setShowSuccess(false), 3000);
+  };
+
+  const calculateAverage = (code) => {
+    const candidateEvals = evaluations.filter(e => e.candidateCode === code);
+    if (candidateEvals.length === 0) return 0;
+    
+    const sum = candidateEvals.reduce((acc, curr) => acc + curr.total, 0);
+    return (sum / candidateEvals.length).toFixed(2);
+  };
+
+  const addCandidate = () => {
+    if (!newCandidate.code || !newCandidate.name) {
+      alert('الرجاء إدخال كود واسم المرشح');
+      return;
+    }
+
+    const codeExists = candidates.find(c => c.code === newCandidate.code);
+    if (codeExists) {
+      alert('هذا الكود موجود مسبقاً. الرجاء استخدام كود مختلف.');
+      return;
+    }
+
+    setCandidates([...candidates, { ...newCandidate, visible: true }]);
+    setNewCandidate({ code: '', name: '' });
+    setSuccessMessage('تم إضافة المرشح بنجاح');
+    setTimeout(() => setSuccessMessage(''), 3000);
+  };
+
+  const toggleCandidateVisibility = (code) => {
+    setCandidates(candidates.map(c => 
+      c.code === code ? { ...c, visible: !c.visible } : c
+    ));
+  };
+
+  const exportData = () => {
+    const data = {
+      candidates,
+      evaluations,
+      exportDate: new Date().toISOString()
+    };
+    
+    const dataStr = JSON.stringify(data, null, 2);
+    const dataBlob = new Blob([dataStr], { type: 'application/json' });
+    const url = URL.createObjectURL(dataBlob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `evaluations_${new Date().toISOString().split('T')[0]}.json`;
+    link.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const importData = (event) => {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        const data = JSON.parse(e.target.result);
+        if (data.candidates && data.evaluations) {
+          setCandidates(data.candidates);
+          setEvaluations(data.evaluations);
+          setSuccessMessage('تم استيراد البيانات بنجاح');
+          setTimeout(() => setSuccessMessage(''), 3000);
+        } else {
+          alert('ملف غير صالح');
+        }
+      } catch (error) {
+        alert('خطأ في قراءة الملف');
       }
-      @media print {
-        body {
-          background-color: white;
-        }
-        .print-hide {
-          display: none !important;
-        }
-        #root {
-          padding: 0;
-          margin: 0;
-        }
-        #evaluations-log-section {
-          box-shadow: none;
-          border: 1px solid #ccc;
-          margin: 0;
-          padding: 1rem;
-        }
-        .container {
-            width: 100% !important;
-            max-width: 100% !important;
-            padding: 0 !important;
-            margin: 0 !important;
-        }
-        table {
-            width: 100%;
-            font-size: 10px;
-        }
-        h2 {
-            font-size: 1.25rem;
-        }
-      }
-    </style>
-  <script type="importmap">
-{
-  "imports": {
-    "react/": "https://aistudiocdn.com/react@^19.2.0/",
-    "react": "https://aistudiocdn.com/react@^19.2.0",
-    "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.0/"
+    };
+    reader.readAsText(file);
+    event.target.value = '';
+  };
+
+  const handlePrint = () => {
+    const printHTML = `
+      <!DOCTYPE html>
+      <html dir="rtl">
+      <head>
+        <meta charset="UTF-8">
+        <title>تقرير التقييمات</title>
+        <style>
+          body { font-family: Arial, sans-serif; padding: 20px; direction: rtl; }
+          h1, h2 { text-align: center; color: #1e40af; }
+          table { width: 100%; border-collapse: collapse; margin: 20px 0; }
+          th, td { border: 1px solid #ddd; padding: 8px; text-align: right; }
+          th { background-color: #f3f4f6; font-weight: bold; }
+          .header { text-align: center; margin-bottom: 30px; }
+          .section-title { margin-top: 30px; font-size: 18px; font-weight: bold; color: #1e40af; border-bottom: 2px solid #1e40af; padding-bottom: 5px; }
+        </style>
+      </head>
+      <body>
+        <div class="header">
+          <h1>تقرير تقييم المرشحين</h1>
+          <p>تاريخ الطباعة: ${new Date().toLocaleDateString('ar-SA')}</p>
+        </div>
+        <div class="section-title">متوسط التقييمات</div>
+        <table>
+          <thead><tr><th>الكود</th><th>اسم المرشح</th><th>عدد التقييمات</th><th>المتوسط</th></tr></thead>
+          <tbody>
+            ${candidates.filter(c => c.visible).map(candidate => {
+              const evals = evaluations.filter(e => e.candidateCode === candidate.code);
+              const avg = calculateAverage(candidate.code);
+              return `<tr><td>${candidate.code}</td><td>${candidate.name}</td><td>${evals.length}</td><td style="font-weight: bold;">${avg > 0 ? avg : '-'}</td></tr>`;
+            }).join('')}
+          </tbody>
+        </table>
+        <div class="section-title">سجل جميع التقييمات التفصيلي</div>
+        <table>
+          <thead><tr><th>المقيّم</th><th>كود المرشح</th><th>المؤهل</th><th>السمات</th><th>التواصل</th><th>الثقافة</th><th>الإجمالي</th></tr></thead>
+          <tbody>
+            ${evaluations.map(eval => `<tr><td>${eval.member}</td><td>${eval.candidateCode}</td><td>${eval.qualification}</td><td>${eval.personality}</td><td>${eval.communication}</td><td>${eval.culture}</td><td style="font-weight: bold;">${eval.total}</td></tr>`).join('')}
+          </tbody>
+        </table>
+      </body>
+      </html>
+    `;
+    
+    const printWindow = window.open('', '_blank');
+    printWindow.document.open();
+    printWindow.document.write(printHTML);
+    printWindow.document.close();
+    setTimeout(() => { printWindow.focus(); printWindow.print(); }, 250);
+  };
+
+  if (!loggedIn) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
+        <Card className="w-full max-w-md">
+          <CardHeader className="text-center">
+            <CardTitle className="text-2xl font-bold text-gray-800">نظام تقييم المرشحين</CardTitle>
+            <p className="text-sm text-gray-600 mt-2">تسجيل دخول أعضاء اللجنة</p>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              {loginError && (
+                <div className="bg-red-50 border-2 border-red-300 rounded-lg p-3">
+                  <div className="flex items-center gap-2 text-red-700">
+                    <AlertCircle size={20} />
+                    <span className="font-medium">{loginError}</span>
+                  </div>
+                </div>
+              )}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2 text-right">اختر العضو</label>
+                <select value={selectedMember} onChange={(e) => setSelectedMember(e.target.value)} className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-right">
+                  <option value="">-- اختر العضو --</option>
+                  {Object.keys(members).map(member => (
+                    <option key={member} value={member}>{member}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2 text-right">كلمة المرور</label>
+                <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} onKeyPress={(e) => e.key === 'Enter' && handleLogin()} className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-right" placeholder="أدخل كلمة المرور" />
+              </div>
+              <button onClick={handleLogin} className="w-full bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 transition-colors font-medium">تسجيل الدخول</button>
+            </div>
+            <div className="mt-4 p-3 bg-gray-50 rounded-lg text-right text-xs">
+              <p className="font-semibold mb-1">ملاحظة:</p>
+              <p>كل عضو له كلمة مرور خاصة.</p>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
   }
+
+  const visibleCandidates = candidates.filter(c => c.visible);
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-4">
+      <div className="max-w-6xl mx-auto">
+        <div className="bg-white rounded-lg shadow-md p-4 mb-6 flex justify-between items-center">
+          <button onClick={handleLogout} className="flex items-center gap-2 text-red-600 hover:text-red-700">
+            <LogOut size={20} />
+            <span>تسجيل الخروج</span>
+          </button>
+          <div className="flex items-center gap-2">
+            <span className="font-semibold text-gray-800">{currentMember}</span>
+            <UserCircle size={24} className="text-blue-600" />
+          </div>
+        </div>
+
+        {(showSuccess || successMessage) && (
+          <Alert className="mb-6 bg-green-50 border-green-200">
+            <CheckCircle className="h-4 w-4 text-green-600" />
+            <AlertDescription className="text-green-800 text-right">{successMessage || 'تم حفظ التقييم بنجاح!'}</AlertDescription>
+          </Alert>
+        )}
+
+        {canManageCandidates && (
+          <Card className="mb-6">
+            <CardHeader><CardTitle className="text-right">إدارة المرشحين</CardTitle></CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                <div className="grid md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2 text-right">كود المرشح</label>
+                    <input type="text" value={newCandidate.code} onChange={(e) => setNewCandidate({...newCandidate, code: e.target.value})} className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-right" placeholder="مثال: C005" />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2 text-right">اسم المرشح</label>
+                    <input type="text" value={newCandidate.name} onChange={(e) => setNewCandidate({...newCandidate, name: e.target.value})} className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-right" placeholder="الاسم الكامل" />
+                  </div>
+                </div>
+                <button onClick={addCandidate} className="w-full bg-green-600 text-white py-2 rounded-lg hover:bg-green-700 transition-colors font-medium flex items-center justify-center gap-2">
+                  <Plus size={20} />
+                  <span>إضافة مرشح جديد</span>
+                </button>
+                <div className="mt-6">
+                  <h3 className="font-semibold text-gray-800 mb-3 text-right">قائمة المرشحين:</h3>
+                  <div className="space-y-2">
+                    {candidates.map(candidate => (
+                      <div key={candidate.code} className="flex items-center justify-between bg-gray-50 p-3 rounded-lg">
+                        <button onClick={() => toggleCandidateVisibility(candidate.code)} className={`px-3 py-1 rounded-lg text-sm font-medium flex items-center gap-2 ${candidate.visible ? 'bg-yellow-100 text-yellow-700 hover:bg-yellow-200' : 'bg-green-100 text-green-700 hover:bg-green-200'}`}>
+                          {candidate.visible ? <EyeOff size={16} /> : <Eye size={16} />}
+                          {candidate.visible ? 'إخفاء' : 'إظهار'}
+                        </button>
+                        <div className="flex items-center gap-2 text-right">
+                          <span className={candidate.visible ? 'text-gray-800' : 'text-gray-400 line-through'}>{candidate.name}</span>
+                          <span className="font-mono text-sm text-gray-600">{candidate.code}</span>
+                          {candidate.visible ? <span className="text-green-600">✓</span> : <span className="text-gray-400">🔒</span>}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {isAdmin && (
+          <Card className="mb-6">
+            <CardHeader><CardTitle className="text-right">إدارة البيانات</CardTitle></CardHeader>
+            <CardContent>
+              <div className="flex gap-4">
+                <button onClick={exportData} className="flex-1 bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 transition-colors font-medium flex items-center justify-center gap-2">
+                  <Download size={20} />
+                  <span>تصدير البيانات</span>
+                </button>
+                <label className="flex-1 bg-green-600 text-white py-2 rounded-lg hover:bg-green-700 transition-colors font-medium flex items-center justify-center gap-2 cursor-pointer">
+                  <Upload size={20} />
+                  <span>استيراد البيانات</span>
+                  <input type="file" accept=".json" onChange={importData} className="hidden" />
+                </label>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {!isDataEntry && (
+          <div className="grid md:grid-cols-2 gap-6">
+            <Card>
+              <CardHeader><CardTitle className="text-right">تقييم مرشح</CardTitle></CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2 text-right">كود المرشح</label>
+                    <select value={candidateCode} onChange={(e) => setCandidateCode(e.target.value)} className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-right">
+                      <option value="">اختر المرشح</option>
+                      {visibleCandidates.map(c => {
+                        const alreadyEvaluated = evaluations.find(e => e.member === currentMember && e.candidateCode === c.code);
+                        return (<option key={c.code} value={c.code} disabled={alreadyEvaluated}>{c.code} - {c.name} {alreadyEvaluated ? '(تم التقييم ✓)' : ''}</option>);
+                      })}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2 text-right">ملاءمة المؤهل العلمي والخبرات (من 40)</label>
+                    <input type="number" value={scores.qualification} onChange={(e) => setScores({...scores, qualification: e.target.value})} className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-right" min="0" max="40" step="0.5" />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2 text-right">السمات الشخصية (من 30)</label>
+                    <input type="number" value={scores.personality} onChange={(e) => setScores({...scores, personality: e.target.value})} className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-right" min="0" max="30" step="0.5" />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2 text-right">مهارات التواصل (من 20)</label>
+                    <input type="number" value={scores.communication} onChange={(e) => setScores({...scores, communication: e.target.value})} className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-right" min="0" max="20" step="0.5" />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2 text-right">الثقافة العامة (من 10)</label>
+                    <input type="number" value={scores.culture} onChange={(e) => setScores({...scores, culture: e.target.value})} className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-right" min="0" max="10" step="0.5" />
+                  </div>
+                  <div className="bg-blue-50 p-3 rounded-lg text-right">
+                    <span className="text-sm text-gray-600">الإجمالي: </span>
+                    <span className="text-xl font-bold text-blue-600">{calculateTotal()} / 100</span>
+                  </div>
+                  <button onClick={handleSubmit} className="w-full bg-green-600 text-white py-2 rounded-lg hover:bg-green-700 transition-colors font-medium">حفظ التقييم</button>
+                </div>
+              </CardContent>
+            </Card>
+
+            {isAdmin && (
+              <Card>
+                <CardHeader><CardTitle className="text-right">متوسط التقييمات (للإدارة فقط)</CardTitle></CardHeader>
+                <CardContent>
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-sm text-right">
+                      <thead className="bg-gray-50">
+                        <tr>
+                          <th className="p-2 border">المتوسط</th>
+                          <th className="p-2 border">عدد التقييمات</th>
+                          <th className="p-2 border">اسم المرشح</th>
+                          <th className="p-2 border">الكود</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {visibleCandidates.map(candidate => {
+                          const evals = evaluations.filter(e => e.candidateCode === candidate.code);
+                          const avg = calculateAverage(candidate.code);
+                          return (
+                            <tr key={candidate.code} className="hover:bg-gray-50">
+                              <td className="p-2 border font-bold text-blue-600">{avg > 0 ? avg : '-'}</td>
+                              <td className="p-2 border">{evals.length}</td>
+                              <td className="p-2 border">{candidate.name}</td>
+                              <td className="p-2 border">{candidate.code}</td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                  {evaluations.length === 0 && (<p className="text-center text-gray-500 mt-4 text-sm">لا توجد تقييمات بعد</p>)}
+                </CardContent>
+              </Card>
+            )}
+          </div>
+        )}
+
+        {evaluations.length > 0 && isAdmin && (
+          <Card className="mt-6">
+            <CardHeader className="flex flex-row items-center justify-between">
+              <button onClick={handlePrint} className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors font-medium flex items-center gap-2">
+                <span>🖨️</span>
+                <span>طباعة التقييمات</span>
+              </button>
+              <CardTitle className="text-right">سجل جميع التقييمات (للإدارة فقط)</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="overflow-x-auto">
+                <table className="w-full text-xs text-right">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      <th className="p-2 border">الإجمالي</th>
+                      <th className="p-2 border">ثقافة</th>
+                      <th className="p-2 border">تواصل</th>
+                      <th className="p-2 border">سمات</th>
+                      <th className="p-2 border">مؤهل</th>
+                      <th className="p-2 border">كود المرشح</th>
+                      <th className="p-2 border">المقيّم</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {evaluations.map((eval, idx) => (
+                      <tr key={idx} className="hover:bg-gray-50">
+                        <td className="p-2 border font-bold">{eval.total}</td>
+                        <td className="p-2 border">{eval.culture}</td>
+                        <td className="p-2 border">{eval.communication}</td>
+                        <td className="p-2 border">{eval.personality}</td>
+                        <td className="p-2 border">{eval.qualification}</td>
+                        <td className="p-2 border">{eval.candidateCode}</td>
+                        <td className="p-2 border text-xs">{eval.member}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+      </div>
+    </div>
+  );
 }
-</script>
-<link rel="stylesheet" href="/index.css">
-</head>
-  <body class="bg-gray-100">
-    <div id="root"></div>
-    <!-- Firebase SDKs -->
-    <script src="https://www.gstatic.com/firebasejs/9.6.7/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.6.7/firebase-firestore-compat.js"></script>
-    <script type="module" src="./index.js"></script>
-  <script type="module" src="/index.tsx"></script>
-</body>
-</html>
