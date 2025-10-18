@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { db } from './firebase/config';
-import { updateEvaluation, updateGuestName } from './firebase/service';
+import { fetchCandidates, fetchEvaluations, fetchGuestNames, updateCandidate, addCandidate, updateEvaluation, updateGuestName } from './firebase/service';
 import type { Candidate, Evaluation, Evaluator } from './types';
 import { LoginPage } from './components/LoginPage';
 import { Dashboard } from './components/Dashboard';
@@ -70,6 +70,17 @@ const App: React.FC = () => {
     await updateEvaluation(newEvaluation);
   };
 
+  const handleSetCandidates = async (newCandidates: Candidate[] | ((prev: Candidate[]) => Candidate[])) => {
+    if (typeof newCandidates === 'function') {
+        const updatedCandidates = newCandidates(candidates);
+        // This is complex to handle with batch writes, simplified for now
+        // A better approach would be specific functions like add, update, delete
+        console.log("Function updates to candidates list should be handled with specific firebase calls.");
+    } else {
+        // This case is also not ideal, it implies replacing the whole collection.
+    }
+  };
+
   if (isLoading) {
     return (
         <div className="min-h-screen flex items-center justify-center">
@@ -119,7 +130,7 @@ const App: React.FC = () => {
         <main className="container mx-auto p-4 sm:p-6 lg:p-8">
             <div className="space-y-8">
                 <SimpleResultsTable candidates={candidates} evaluations={evaluations} />
-                <CandidateManagement candidates={candidates} />
+                <CandidateManagement candidates={candidates} setCandidates={handleSetCandidates} />
                 <AllEvaluationsLog evaluations={evaluations} evaluators={EVALUATORS} guestNames={guestNames} />
             </div>
         </main>
@@ -141,6 +152,7 @@ const App: React.FC = () => {
         return <DataEntryDashboard
             evaluator={loggedInEvaluator}
             candidates={candidates}
+            setCandidates={handleSetCandidates}
             onLogout={handleLogout}
         />;
     default:

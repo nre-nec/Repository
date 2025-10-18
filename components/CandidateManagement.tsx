@@ -9,6 +9,7 @@ import { CloseIcon } from './icons/CloseIcon';
 
 interface CandidateManagementProps {
   candidates: Candidate[];
+  setCandidates: (value: Candidate[] | ((val: Candidate[]) => Candidate[])) => void; // Prop is now for local state updates, but we use firebase service
 }
 
 export const CandidateManagement: React.FC<CandidateManagementProps> = ({ candidates }) => {

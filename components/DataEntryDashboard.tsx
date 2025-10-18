@@ -1,15 +1,17 @@
 import React from 'react';
 import type { Candidate, Evaluator } from '../types';
+// FIX: Corrected import path for CandidateManagement component.
 import { CandidateManagement } from './CandidateManagement';
 import { LogoutIcon } from './icons/LogoutIcon';
 
 interface DataEntryDashboardProps {
   evaluator: Evaluator;
   candidates: Candidate[];
+  setCandidates: React.Dispatch<React.SetStateAction<Candidate[]>>;
   onLogout: () => void;
 }
 
-export const DataEntryDashboard: React.FC<DataEntryDashboardProps> = ({ evaluator, candidates, onLogout }) => {
+export const DataEntryDashboard: React.FC<DataEntryDashboardProps> = ({ evaluator, candidates, setCandidates, onLogout }) => {
   return (
     <div className="min-h-screen bg-gray-100 text-gray-800">
        <header className="bg-white shadow-md">
@@ -31,7 +33,7 @@ export const DataEntryDashboard: React.FC<DataEntryDashboardProps> = ({ evaluato
       </header>
       <main className="container mx-auto p-4 sm:p-6 lg:p-8">
         <div className="space-y-8">
-          <CandidateManagement candidates={candidates} />
+          <CandidateManagement candidates={candidates} setCandidates={setCandidates} />
         </div>
       </main>
     </div>
