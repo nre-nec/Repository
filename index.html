@@ -141,10 +141,9 @@
     </main>
 
     <script>
-      // ✅ رابط Google Apps Script (منشور كـ Web App)
-      const scriptURL = "https://script.google.com/macros/s/AKfycbyGGK_3CQOALxLKurILuHHWsdy75uDWz4MsQbg9A32gRY_q6N_OrVOVeyA6vGgFQiwl/exec";
+      // ✅ رابط Google Apps Script الجديد
+      const scriptURL = "https://script.google.com/macros/s/AKfycbwv0bVnUxqqTkHr6S_hhGc_ZWTbsZD8qNjHliYr067M-6T3c7p4lr0U9NPsWm0XToFs/exec";
 
-      // أعضاء اللجنة + كلمات المرور
       const members = {
         "د. نورة بنت عبد الله الهديب": "noura2025",
         "د. محمد بن رفعت السوداني": "mohamed2025",
@@ -171,7 +170,6 @@
 
       let currentMember = "";
 
-      // تسجيل الدخول
       loginBtn.addEventListener("click", () => {
         const member = document.getElementById("member").value;
         const password = document.getElementById("password").value;
@@ -189,7 +187,6 @@
         }
       });
 
-      // تسجيل الخروج
       logoutBtn.addEventListener("click", () => {
         currentMember = "";
         document.getElementById("password").value = "";
@@ -197,10 +194,8 @@
         formSection.classList.add("hidden");
       });
 
-      // طباعة
       printBtn.addEventListener("click", () => window.print());
 
-      // حساب الإجمالي
       ["qualification","personality","communication","culture"].forEach(id => {
         document.getElementById(id).addEventListener("input", () => {
           const q = +document.getElementById("qualification").value || 0;
@@ -211,7 +206,6 @@
         });
       });
 
-      // حفظ البيانات في Google Sheet
       saveBtn.addEventListener("click", () => {
         const data = {
           member: currentMember,
@@ -224,7 +218,6 @@
           total: totalField.textContent.split("/")[0].trim()
         };
 
-        // تحقق بسيط
         if (!data.member || !data.candidateCode || !data.candidateName) {
           alert("الرجاء تعبئة العضو، كود المرشح، واسم المرشح");
           return;
@@ -238,7 +231,6 @@
         .then(res => res.json())
         .then(() => {
           saveMsg.classList.remove("hidden");
-          // تفريغ الحقول (عدا العضو)
           ["candidate-code","candidate-name","qualification","personality","communication","culture"].forEach(id => document.getElementById(id).value = "");
           totalField.textContent = "0 / 100";
           loadEvaluations();
@@ -247,7 +239,6 @@
         .catch(err => alert("خطأ أثناء الحفظ: " + err));
       });
 
-      // قراءة جميع التقييمات
       function loadEvaluations() {
         fetch(scriptURL)
           .then(res => res.json())
